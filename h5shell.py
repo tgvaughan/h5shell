@@ -26,7 +26,7 @@ class Colors:
 		self.END = ''
 
 
-# Display list of objects contained in the given group:
+# Display formatted list of objects contained in the given group:
 def list_objects(h5group, matchstr):
 
 	# Convert common filename matching wildcards with regexp equivalents:
@@ -101,6 +101,10 @@ class H5Cmd(Cmd):
 		else:
 			abspath = self.pathstr + relpath
 
+		# Modify behaviour of ..:
+		if abspath.endswith('..'):
+			abspath += '/'
+
 		# Clean up:
 		while '//' in abspath:
 			abspath = abspath.replace('//','/')
@@ -113,7 +117,6 @@ class H5Cmd(Cmd):
 				del pathList[(idx-1):(idx+1)]
 			else:
 				del pathList[1]
-
 		abspath = '/'.join(pathList)
 
 		return(abspath)
@@ -121,22 +124,15 @@ class H5Cmd(Cmd):
 
 	# Generic path name completion:
 	def path_completion(self, text):
-		
-		if len(text) == 0:
-			text = self.pathstr
-		elif text[0] != '/':
-			text = self.pathstr + text
 
-		if text.endswith('..'):
-			grpPath, grpName = text, ''
-		else:
-			grpPath, grpName = text.rsplit('/',1)
+		# Convert relative paths to absolute:
+		text = self.rel_to_absolute(text)
+
+		# Split path and (possibly incomplete) group name:
+		grpPath, grpName = text.rsplit('/',1)
 
 		# Normalise group name:
 		grpPath = grpPath.rstrip('/') + '/'
-
-		# Convert relative paths to absolute:
-		grpPath = self.rel_to_absolute(grpPath)
 
 		# Return if no group at chosen path:
 		if not isinstance(self.f[grpPath], h5.Group):
@@ -183,21 +179,14 @@ class H5Cmd(Cmd):
 	# List group contents:
 	def do_ls(self, lspath):
 
-		if len(lspath) == 0:
-			lspath = self.pathstr
-		elif lspath[0] != '/':
-			lspath = self.pathstr + lspath
+		# Convert relative paths to absolute:
+		lspath = self.rel_to_absolute(lspath)
 
-		if lspath.endswith('..'):
-			grpPath, grpName = lspath, ''
-		else:
-			grpPath, grpName = lspath.rsplit('/',1)
+		# Split path and name of object:
+		grpPath, grpName = lspath.rsplit('/',1)
 
 		# Normalise group name:
 		grpPath = grpPath.rstrip('/') + '/'
-
-		# Convert relative paths to absolute:
-		grpPath = self.rel_to_absolute(grpPath)
 
 		# Error if group path invalid:
 		if not isinstance(self.f[grpPath], h5.Group):
