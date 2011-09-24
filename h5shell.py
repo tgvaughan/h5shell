@@ -13,17 +13,32 @@ import re
 ##################################
 
 # Define ANSI escape sequences for use in colour mode:
-class Colors:
-	PROMPT = '\033[32m'
+class Colour:
+	PROMPT1 = '\033[22;32m'
+	PROMPT2 = '\033[1;32m'
+	STATS = '\033[1;33m'
 	GROUP = '\033[1;34m'
-	DATASET = '\033[1;37m'
+	DATASET = '\033[0;37m'
+	DATATYPE = '\033[1;35m'
+	ERROR = '\033[31m'
 	END = '\033[m'
 
 	def disable(self):
-		self.PROMPT = ''
+		self.PROMPT1 = ''
+		self.PROMPT2 = ''
 		self.GROUP = ''
 		self.DATASET = ''
+		self.DATATYPE = ''
+		self.ERROR = ''
 		self.END = ''
+
+
+# Pretty formatting of shape array:
+def shapeformat (shape):
+	if shape == ():
+		return 'Scalar'
+	else:
+		return 'x'.join([str(i) for i in shape])
 
 
 # Display formatted list of objects contained in the given group:
@@ -41,19 +56,38 @@ def list_objects(h5group, matchstr):
 		if re.search(restr, key) == None:
 			continue
 
-		keystr = key
-		if isinstance(h5group[key], h5.Group):
-			keystr = Colors.GROUP + keystr + '/' + Colors.END
+		keyobj = h5group[key]
+
+		if isinstance(keyobj, h5.Group):
+
+			# Display GROUP info:
+			keystr = Colour.GROUP + key + '/' + Colour.END
+
+		elif isinstance(keyobj, h5.Dataset):
+
+			# Check for compound datatypes:
+			if keyobj.dtype.isbuiltin != 1:
+				dtypestr = 'Compound'
+			else:
+				dtypestr = str(keyobj.dtype)
+
+			# Display DATASET info:
+			keystr = Colour.DATASET + '{0:-<40s}'.format(key) + Colour.END
+			keystr += Colour.STATS
+			keystr += ' {0:^10s} {1:^10s} '.format(dtypestr,shapeformat(keyobj.shape))
+
 		else:
-			keystr = Colors.DATASET + keystr + Colors.END
+
+			# Display DATATYPE info:
+			keystr = Colour.DATATYPE + key + '+' + Colour.END
 
 		print keystr
-
+	
 
 # Application class:
 class H5Cmd(Cmd):
-
-	prompt = 'HDF5> '
+	
+	intro = "h5shell v1.0.  Type '?' for list of commands.\n"
 
 	# Constructor:
 	def __init__(self, f, fname):
@@ -73,13 +107,18 @@ class H5Cmd(Cmd):
 		readline.set_completer_delims(delims)
 
 
+
 	# House-keeping methods:
 
 	def do_shell(self, arg):
 		system(arg)
 
-	def do_emptyline(self, arg):
+	def do_emptyline(self):
 		pass
+
+	def default(self, line):
+		errstr = "*** Invalid command. Type '?' for list of valid commands."
+		print Colour.ERROR + errstr + Colour.END
 
 	def do_EOF(self, arg):
 		print '\nExiting...'
@@ -90,7 +129,78 @@ class H5Cmd(Cmd):
 		return True
 
 
-	# Internal database navigation methods:
+	# Inline help methods:
+
+	def do_help(self, arg):
+
+		if arg == '':
+			print """Shell Commands (help <topic> for more info):
+============================================
+ls	[path]	List contents of group.
+cd	[group]	Change current group.
+!	<cmd>	Execute command in system shell.
+
+quit		Exits h5shell.
+============================================
+"""
+		else:
+			switch = {
+					'ls': self.help_ls,
+					'cd': self.help_cd,
+					'!': self.help_shell,
+					'quit': self.help_quit
+					}
+			if arg in switch.keys():
+				switch.get(arg)()
+			else:
+				print Colour.ERROR + "*** No help on '{0}'.\n".format(arg) + Colour.END
+
+	def help_ls (self):
+		print """Usage: ls [path]
+
+Lists contents of current group or specified [path].  Wildcards
+are accepted. For example, "ls /foo*" will list all objects whose names
+begining with the prefix "pref" in the root group.  Similarly,
+"ls ?bar" will list all objects in the current group whose names
+are 4 characters long and end with "bar".
+"""
+
+	def help_cd (self):
+		print """Usage: cd [group]
+
+Changes the current group to [group] or to '/' if [group] is absent.
+"""
+
+	def help_shell (self):
+		print """Usage: ! <cmd>
+
+Executes the given command in your default system shell.
+"""
+
+	def help_quit (self):
+		print """Usage: quit
+
+Exits h5shell. EOF (^D) can also be used.
+"""
+
+
+	# Methods for internal use:
+
+	# Set command prompt:
+	def set_prompt(self):
+
+		pathstr = self.pathstr
+		if len(pathstr)>1:
+			pathstr = pathstr.rstrip('/')
+
+		self.prompt = Colour.PROMPT1
+		self.prompt += self.fname + ':'
+		self.prompt += Colour.PROMPT2
+		self.prompt += pathstr
+		self.prompt += Colour.PROMPT1
+		self.prompt += '> '
+		self.prompt += Colour.END
+
 
 	# Convert relative path names to absolute:
 	def rel_to_absolute(self, relpath):
@@ -164,17 +274,10 @@ class H5Cmd(Cmd):
 
 		# Check that newpathstr refers to an extant group:
 		if f.get(newpathstr, getclass=True) != h5.Group:
-			print "Error: Path '{0}' is not a group.".format(newpathstr)
+			print Colour.ERROR + "*** Path '{0}' is not a group.".format(newpathstr) + Colour.END
 		else:
 			self.pathstr = newpathstr
-			if len(self.pathstr)>1:
-				self.prompt = Colors.PROMPT
-				self.prompt += self.fname + ': ' + newpathstr.rstrip('/') + '> '
-				self.prompt += Colors.END
-			else:
-				self.prompt = Colors.PROMPT
-				self.prompt += self.fname + ': ' + newpathstr + '> '
-				self.prompt += Colors.END
+			self.set_prompt()
 
 	# List group contents:
 	def do_ls(self, lspath):
@@ -225,8 +328,6 @@ if __name__ == '__main__':
 		print "Error opening HDF5 file '%s'. Aborting." % (h5fname)
 		print "(Do you have write access to this location?)"
 		exit(1)
-	
-	# Assemble header:
 
 	# Start command loop:
 	c = H5Cmd(f, h5fname)
