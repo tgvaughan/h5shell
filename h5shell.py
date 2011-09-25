@@ -111,7 +111,7 @@ Copyright 2011 Tim Vaughan
 
 This program comes with ABSOLUTELY NO WARRANTY.  This is free
 software, and you are welcome to redistribute it under certain
-conditions.  Type `help license' for details.
+conditions.  Type 'license' for details.
 
 Type '?' for a full list of commands.\n"""
 
@@ -166,8 +166,10 @@ ls	[path]	List contents of group.
 cd	[group]	Change current group.
 !	<cmd>	Execute command in system shell.
 
-quit		Exits h5shell.
+quit / ^D 	Exits h5shell.
 ============================================
+
+Type 'license' for distribution and warranty conditions.
 """
 		else:
 			switch = {
@@ -175,7 +177,6 @@ quit		Exits h5shell.
 					'cd': self.help_cd,
 					'!': self.help_shell,
 					'quit': self.help_quit,
-					'license': self.help_license
 					}
 			if arg in switch.keys():
 				switch.get(arg)()
@@ -190,7 +191,25 @@ accepted.  For example, "ls /foo*" will list all objects whose names
 match with the prefix "pref" in the root group.  Similarly, "ls ?bar"
 will list all objects in the current group whose names are 4
 characters long and end with "bar".
-"""
+
+The output of ls describes a single object per line.  Each line uses
+formatting conventions determined by the type of database object being
+displayed on that line.
+
+* Names of group objects are displayed with a trailing /:
+	{1}group_name/{0}
+
+* Names of named datatypes are displayed with a trailing +:
+	{2}datatype_name+{0}
+
+* Datasets are displayed with their associated datatype and
+  multi-dimensional array shape:
+	{3}dataset_name -------{4} DTYPE  SHAPE{0}
+""".format(Colour.END,
+		Colour.GROUP,
+		Colour.DATATYPE,
+		Colour.DATASET,
+		Colour.STATS)
 
 	def help_cd (self):
 		print """Usage: cd [group]
@@ -210,7 +229,7 @@ Executes the given command in your default system shell.
 Exits h5shell. EOF (^D) can also be used.
 """
 
-	def help_license (self):
+	def do_license (self, arg):
 		print """h5shell is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
