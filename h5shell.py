@@ -1,4 +1,21 @@
 #!/usr/bin/env python
+#
+# h5shell v1.0
+#
+# Copyright 2011 Tim Vaughan
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import h5py as h5
 
@@ -89,7 +106,14 @@ def list_objects(h5group, matchstr):
 # Application class:
 class H5Cmd(Cmd):
 	
-	intro = "h5shell v1.0.  Type '?' for list of commands.\n"
+	intro = """h5shell v1.0.
+Copyright 2011 Tim Vaughan
+
+This program comes with ABSOLUTELY NO WARRANTY.  This is free
+software, and you are welcome to redistribute it under certain
+conditions.  Type `help license' for details.
+
+Type '?' for a full list of commands.\n"""
 
 	# Constructor:
 	def __init__(self, f, fname):
@@ -150,7 +174,8 @@ quit		Exits h5shell.
 					'ls': self.help_ls,
 					'cd': self.help_cd,
 					'!': self.help_shell,
-					'quit': self.help_quit
+					'quit': self.help_quit,
+					'license': self.help_license
 					}
 			if arg in switch.keys():
 				switch.get(arg)()
@@ -183,6 +208,22 @@ Executes the given command in your default system shell.
 		print """Usage: quit
 
 Exits h5shell. EOF (^D) can also be used.
+"""
+
+	def help_license (self):
+		print """h5shell is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+h5shell is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program in the file named COPYING.  If not, see
+<http://www.gnu.org/licenses/>.
 """
 
 
