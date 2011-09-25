@@ -9,7 +9,7 @@ Software Requirements
 ---------------------
 
 * A Python 2.x installation (works in 2.6)
-* The awesome h5py module (install via pip or download from
+* The awesome h5py module - install via pip or download from
   directly http://code.google.com/p/h5py/.
 * GNU readline if you want any of the nice path completion. (You do!)
 
