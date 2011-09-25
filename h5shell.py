@@ -2,6 +2,7 @@
 
 import h5py as h5
 
+
 #### Standard Library Modules ####
 import readline
 from cmd import Cmd
@@ -11,6 +12,7 @@ from os import path, system
 
 import re
 ##################################
+
 
 # Define ANSI escape sequences for use in colour mode:
 class Colour:
@@ -72,7 +74,7 @@ def list_objects(h5group, matchstr):
 				dtypestr = str(keyobj.dtype)
 
 			# Display DATASET info:
-			keystr = Colour.DATASET + '{0:-<40s}'.format(key) + Colour.END
+			keystr = Colour.DATASET + '{0:-<40s}'.format(key+' ') + Colour.END
 			keystr += Colour.STATS
 			keystr += ' {0:^10s} {1:^10s} '.format(dtypestr,shapeformat(keyobj.shape))
 
@@ -158,11 +160,11 @@ quit		Exits h5shell.
 	def help_ls (self):
 		print """Usage: ls [path]
 
-Lists contents of current group or specified [path].  Wildcards
-are accepted. For example, "ls /foo*" will list all objects whose names
-begining with the prefix "pref" in the root group.  Similarly,
-"ls ?bar" will list all objects in the current group whose names
-are 4 characters long and end with "bar".
+Lists contents of current group or specified [path].  Wildcards are
+accepted.  For example, "ls /foo*" will list all objects whose names
+match with the prefix "pref" in the root group.  Similarly, "ls ?bar"
+will list all objects in the current group whose names are 4
+characters long and end with "bar".
 """
 
 	def help_cd (self):
