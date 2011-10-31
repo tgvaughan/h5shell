@@ -37,6 +37,7 @@ class Colour:
 	PROMPT2 = '\033[1;32m'
 	STATS = '\033[1;33m'
 	GROUP = '\033[1;34m'
+	ATTR = '\033[1;36m'
 	DATASET = '\033[0;37m'
 	DATATYPE = '\033[1;35m'
 	ERROR = '\033[31m'
@@ -68,10 +69,37 @@ def list_objects(h5group, matchstr):
 		restr = '^' + matchstr.replace('.','\.').replace('?','.').replace('*','.*') + '$'
 	else:
 		restr = ''
+	
+	# List matching group attributes:
+	for key in h5group.attrs.keys():
 
+		# Skip object if its key doesn't match regexp:
+		if re.search(restr, key) == None:
+			continue
+
+		keyobj = h5group.attrs[key]
+
+		# Check for compound datatypes:
+		if keyobj.dtype.isbuiltin != 1:
+			dtypestr = '(Compound)'
+		else:
+			dtypestr = '(' + str(keyobj.dtype) + ')'
+
+		keystr = Colour.ATTR + '{0:-<40s}'.format('@'+key+' ') + Colour.END
+
+		keystr += Colour.STATS
+		if keyobj.size == 1:
+			keystr += ' ={0:<10s} {1:^10s} '.format(str(keyobj[0]), dtypestr)
+		else:
+			keystr += ' {0:^10s} {1:^10s} '.format(shapeformat(keyobj.shape), dtypestr)
+		keystr += Colour.END
+
+		print keystr
+
+	# List matching group objects:
 	for key in h5group.keys():
 
-		# Skip object if it's key doesn't match regexp:
+		# Skip object if its key doesn't match regexp:
 		if re.search(restr, key) == None:
 			continue
 
@@ -86,19 +114,20 @@ def list_objects(h5group, matchstr):
 
 			# Check for compound datatypes:
 			if keyobj.dtype.isbuiltin != 1:
-				dtypestr = 'Compound'
+				dtypestr = '(Compound)'
 			else:
-				dtypestr = str(keyobj.dtype)
+				dtypestr = '(' + str(keyobj.dtype) + ')'
 
 			# Display DATASET info:
 			keystr = Colour.DATASET + '{0:-<40s}'.format(key+' ') + Colour.END
 			keystr += Colour.STATS
-			keystr += ' {0:^10s} {1:^10s} '.format(dtypestr,shapeformat(keyobj.shape))
+			keystr += ' {0:^10s} {1:^10s} '.format(shapeformat(keyobj.shape), dtypestr)
+			keystr += Colour.END
 
 		else:
 
 			# Display DATATYPE info:
-			keystr = Colour.DATATYPE + key + '+' + Colour.END
+			keystr = Colour.DATATYPE + '+' + key + Colour.END
 
 		print keystr
 	
@@ -199,15 +228,20 @@ displayed on that line.
 * Names of group objects are displayed with a trailing /:
 	{1}group_name/{0}
 
-* Names of named datatypes are displayed with a trailing +:
-	{2}datatype_name+{0}
+* Names of named datatypes are displayed with a leading +:
+	{2}+datatype_name{0}
 
-* Datasets are displayed with their associated datatype and
-  multi-dimensional array shape:
-	{3}dataset_name -------{4} DTYPE  SHAPE{0}
+* Group attributes are displayed with a leading @ and with
+  their associated value (or shape if non-scalar) and datatype:
+	{3}@attr_name ---------{5} =VALUE (DTYPE){0}
+
+* Datasets are displayed with their multi-dimensional array
+  shape and their associated datatype:
+	{4}dataset_name -------{5} SHAPE  (DTYPE){0}
 """.format(Colour.END,
 		Colour.GROUP,
 		Colour.DATATYPE,
+		Colour.ATTR,
 		Colour.DATASET,
 		Colour.STATS)
 
