@@ -3,6 +3,7 @@ h5shell
 
 A limited command shell interface to HDF5 files (http://www.hdfgroup.org/).
 Currently supported operations include:
+
 * exploring file contents using `cd` and `ls` commands,
 * removing database objects using the `rm` command.
 
