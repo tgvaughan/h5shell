@@ -2,8 +2,16 @@ h5shell
 =======
 
 A limited command shell interface to HDF5 files (http://www.hdfgroup.org/).
-Currently only supports read-only operations, but will include copy, move and
-delete operations on database objects.
+Currently supported operations include:
+* exploring file contents using `cd` and `ls` commands,
+* removing database objects using the `rm` command.
+
+Note that removing database objects is fairly pointless at this stage due to a
+deficiency in HDF5 which causes the free space by this operation to be "lost"
+(i.e. the object is unlinked but space is not reallocated).  The h5repack
+utility provided by the HDF group can be used to reclaim this lot space.
+
+The ability to move and copy objects around will be added in future.
 
 Software Requirements
 ---------------------

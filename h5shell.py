@@ -239,23 +239,6 @@ Type '?' for a full list of commands.\n""".format(__version__)
 
 		return(abspath)
 
-	def do_cd(self, newpathstr):
-		"""Change directory."""
-
-		# Normalise group name:
-		newpathstr = newpathstr.rstrip('/') + '/'
-
-		# Convert relative paths to absolute:
-		newpathstr = self.rel_to_absolute(newpathstr)
-
-		# Check that newpathstr refers to an extant group:
-		if f.get(newpathstr, getclass=True) != h5.Group:
-			print self.colour.ERROR + "*** Path '{0}' is not a group.".format(newpathstr) \
-				+ self.colour.END
-		else:
-			self.pathstr = newpathstr
-			self.set_prompt()
-
 	def do_ls(self, lspath):
 		"""List group contents."""
 
@@ -275,10 +258,47 @@ Type '?' for a full list of commands.\n""".format(__version__)
 
 		list_objects(self.f[grpPath], grpName, self.colour)
 
+	def do_cd(self, newpathstr):
+		"""Change directory."""
+
+		# Normalise group name:
+		newpathstr = newpathstr.rstrip('/') + '/'
+
+		# Convert relative paths to absolute:
+		newpathstr = self.rel_to_absolute(newpathstr)
+
+		# Check that newpathstr refers to an extant group:
+		if f.get(newpathstr, getclass=True) != h5.Group:
+			print self.colour.ERROR + "*** Path '{0}' is not a group.".format(newpathstr) \
+				+ self.colour.END
+		else:
+			self.pathstr = newpathstr
+			self.set_prompt()
+	
+	def do_rm(self, objpathstr):
+		"""Delete object."""
+
+		# Normalise object name:
+		objpathstr = objpathstr.rstrip('/')
+
+		# Convert relative paths to absolute:
+		objpathstr = self.rel_to_absolute(objpathstr)
+
+		# Check that objpathstr refers to an extant object:
+		if objpathstr not in f:
+			print colour.ERROR + "*** Object '{0}' does not exist.".format(objpathstr) + colour.END
+
+		# Abort if objpathstr is a group containing other objects:
+		elif isinstance(f[objpathstr], h5.Group) and f[objpathstr].items:
+			print colour.ERROR + "*** Object '{0}' is non-empty.".format(objpathstr) + colour.END
+
+		else:
+			del f[objpathstr]
+
 
 	# Command completion:
 	
-	def path_completion(self, line):
+	def path_completion(self, line, only_groups=True):
 		"""Generic path name completion."""
 		
 		# Convert relative paths to absolute:
@@ -298,7 +318,7 @@ Type '?' for a full list of commands.\n""".format(__version__)
 
 		for key in self.f[grpPath]:
 
-			if not isinstance(self.f[grpPath][key], h5.Group):
+			if only_groups and not isinstance(self.f[grpPath][key], h5.Group):
 				continue
 
 			if key.startswith(grpName):
@@ -310,7 +330,10 @@ Type '?' for a full list of commands.\n""".format(__version__)
 		return self.path_completion(line[3:])
 
 	def complete_ls(self, text, line, begidx, endidx):
-		return self.path_completion(line[3:])
+		return self.path_completion(line[3:], only_groups=False)
+
+	def complete_rm(self, text, line, begidx, endidx):
+		return self.path_completion(line[3:], only_groups=False)
 
 
 	# Inline help methods:
@@ -320,11 +343,12 @@ Type '?' for a full list of commands.\n""".format(__version__)
 		if arg == '':
 			print """Shell Commands (help <topic> for more info):
 ============================================
-ls	[path]	List contents of group.
-cd	[group]	Change current group.
-!	<cmd>	Execute command in system shell.
+ls [path]   List contents of group.
+cd [group]  Change current group.
+rm [object] Delete specified object.
+!  <cmd>    Execute command in system shell.
 
-quit / ^D 	Exits h5shell.
+quit / ^D   Exits h5shell.
 ============================================
 
 Type 'license' for distribution and warranty conditions.
@@ -333,6 +357,7 @@ Type 'license' for distribution and warranty conditions.
 			switch = {
 					'ls': self.help_ls,
 					'cd': self.help_cd,
+					'rm': self.help_rm,
 					'!': self.help_shell,
 					'quit': self.help_quit,
 					}
@@ -379,6 +404,12 @@ displayed on that line.
 		print """Usage: cd [group]
 
 Changes the current group to [group] or to '/' if [group] is absent.
+"""
+
+	def help_rm (self):
+		print """Usage: rm [object]
+
+Removes the specified object from the HDF file.  Cannot be undone.
 """
 
 	def help_shell (self):
