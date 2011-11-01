@@ -420,12 +420,8 @@ if __name__ == '__main__':
 					help="Location of HDF5 formatted data file.")
 	parser.add_argument('--no-colour', '--no-color', action='store_true',
 					help="Prevent h5shell from using ANSI colour codes.")
-
 	args=parser.parse_args()
 	
-	print args
-	exit(0)
-
 	# Inform about the creation of a new file:
 	if not path.exists(args.h5fname):
 		print "Error: File '%s' does not exist. Aborting.\n" % (args.h5fname)
